@@ -90,18 +90,27 @@ class AppDatabase {
       await _createPendingSyncTable(db);
     }
     if (oldVersion < 7) {
-      await db.execute(
-          'ALTER TABLE products ADD COLUMN cost REAL NOT NULL DEFAULT 0');
-      await db.execute(
-          'ALTER TABLE order_items ADD COLUMN cost REAL NOT NULL DEFAULT 0');
+      final pCols = await db.rawQuery('PRAGMA table_info(products)');
+      if (!pCols.any((c) => c['name'] == 'cost')) {
+        await db.execute(
+            'ALTER TABLE products ADD COLUMN cost REAL NOT NULL DEFAULT 0');
+      }
+      final oiCols = await db.rawQuery('PRAGMA table_info(order_items)');
+      if (!oiCols.any((c) => c['name'] == 'cost')) {
+        await db.execute(
+            'ALTER TABLE order_items ADD COLUMN cost REAL NOT NULL DEFAULT 0');
+      }
       await _createExpensesTable(db);
     }
     if (oldVersion < 8) {
-      await db.execute('ALTER TABLE products ADD COLUMN updated_at TEXT');
-      await db.rawUpdate(
-        'UPDATE products SET updated_at = ?',
-        [DateTime.now().toUtc().toIso8601String()],
-      );
+      final cols8 = await db.rawQuery('PRAGMA table_info(products)');
+      if (!cols8.any((c) => c['name'] == 'updated_at')) {
+        await db.execute('ALTER TABLE products ADD COLUMN updated_at TEXT');
+        await db.rawUpdate(
+          'UPDATE products SET updated_at = ?',
+          [DateTime.now().toUtc().toIso8601String()],
+        );
+      }
     }
   }
 
