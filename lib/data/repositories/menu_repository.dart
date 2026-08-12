@@ -111,43 +111,47 @@ class MenuRepository {
         for (final p in await AppDatabase.instance.queryProductsAll()) p.id: p,
       };
       for (final row in rows) {
-        final key = row['local_key'] as String?;
-        if (key == null) continue;
-        final categoryName = row['categories'] is Map
-            ? (row['categories'] as Map)['name'] as String?
-            : null;
-        ProductCategory? category;
-        for (final c in ProductCategory.values) {
-          if (c.label == categoryName) {
-            category = c;
-            break;
+        try {
+          final key = row['local_key'] as String?;
+          if (key == null) continue;
+          final categoryName = row['categories'] is Map
+              ? (row['categories'] as Map)['name'] as String?
+              : null;
+          ProductCategory? category;
+          for (final c in ProductCategory.values) {
+            if (c.label == categoryName) {
+              category = c;
+              break;
+            }
           }
-        }
-        if (category == null) continue;
-        final remote = Product(
-          id: key,
-          name: row['name'] as String,
-          price: double.tryParse(row['price']?.toString() ?? '') ?? 0,
-          cost: double.tryParse(row['cost']?.toString() ?? '') ?? 0,
-          category: category,
-          active: row['active'] as bool? ?? true,
-          updatedAt: row['updated_at'] is DateTime
-              ? (row['updated_at'] as DateTime).toUtc()
-              : DateTime.tryParse(row['updated_at'] as String? ?? '')
-                  ?.toUtc(),
-        );
-        final winner =
-            ProductSync.mergeProduct(local: local[key], remote: remote);
-        if (winner != null && !identical(winner, local[key])) {
-          await AppDatabase.instance.upsertSyncedProduct(
-            id: winner.id,
-            name: winner.name,
-            price: winner.price,
-            cost: winner.cost,
-            category: winner.category,
-            active: winner.active,
-            updatedAt: winner.updatedAt ?? DateTime.now().toUtc(),
+          if (category == null) continue;
+          final remote = Product(
+            id: key,
+            name: row['name'] as String,
+            price: double.tryParse(row['price']?.toString() ?? '') ?? 0,
+            cost: double.tryParse(row['cost']?.toString() ?? '') ?? 0,
+            category: category,
+            active: row['active'] as bool? ?? true,
+            updatedAt: row['updated_at'] is DateTime
+                ? (row['updated_at'] as DateTime).toUtc()
+                : DateTime.tryParse(row['updated_at'] as String? ?? '')
+                    ?.toUtc(),
           );
+          final winner =
+              ProductSync.mergeProduct(local: local[key], remote: remote);
+          if (winner != null && !identical(winner, local[key])) {
+            await AppDatabase.instance.upsertSyncedProduct(
+              id: winner.id,
+              name: winner.name,
+              price: winner.price,
+              cost: winner.cost,
+              category: winner.category,
+              active: winner.active,
+              updatedAt: winner.updatedAt ?? DateTime.now().toUtc(),
+            );
+          }
+        } catch (_) {
+          // Skip malformed rows; keep pulling the rest.
         }
       }
     } catch (_) {
