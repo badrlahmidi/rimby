@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:ritaj_pos/data/local/app_database.dart';
 import 'package:ritaj_pos/data/local/app_preferences.dart';
 import 'package:ritaj_pos/data/models/product.dart';
@@ -13,9 +14,6 @@ class MenuRepository {
     await _pullRemoteProducts();
     return AppDatabase.instance.queryProducts();
   }
-
-  Future<List<Product>> productsOf(ProductCategory category) =>
-      AppDatabase.instance.queryProducts(category: category);
 
   Future<void> addProduct({
     required String name,
@@ -93,8 +91,9 @@ class MenuRepository {
               .toIso8601String(),
         }, onConflict: 'branch_id,local_key');
       }
-    } catch (_) {
+    } catch (e) {
       // Menu sync is best-effort; offline edits remain local.
+      debugPrint('menu sync failed: $e');
     }
   }
 
@@ -154,8 +153,9 @@ class MenuRepository {
           // Skip malformed rows; keep pulling the rest.
         }
       }
-    } catch (_) {
+    } catch (e) {
       // Best-effort menu pull; offline keeps local.
+      debugPrint('menu pull failed: $e');
     }
   }
 }
