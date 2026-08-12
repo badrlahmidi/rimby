@@ -47,6 +47,10 @@ Sunmi printer, RTL arabe. 82 tests, `flutter analyze` 0 issue.
 > (pull LWW par `updated_at`) : produits/prix/suppressions propagés entre appareils,
 > pull au chargement et avant chaque push, `syncMenu` corrigé (`active` réel + `updated_at`).
 > 82 tests, analyze 0.
+>
+> Note : le trigger Supabase `trg_products_updated` ré-estampe `updated_at` à l'écriture
+> serveur pour les lignes déjà existantes — le LWW compare l'horloge de l'appareil (push)
+> à l'horloge du serveur (pull). Convergence correcte pour des appareils NTP ; à documenter/affiner (suivi).
 
 ---
 
